@@ -6,4 +6,9 @@ class HomeControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get root page" do
+    get root_url
+    assert_response :success
+  end
+  
 end
