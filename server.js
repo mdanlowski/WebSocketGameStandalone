@@ -36,7 +36,7 @@ io.sockets.on('connection', function(socket){
 		ALLPLAYERS[socket.id] = newPlayerData;	// add most recent player to the hash
 		socket.broadcast.emit('playerConnected', newPlayerData);  // broadcast newest player to already connected players
 		console.log(earlierPlayers);	// send older players to newest player
-		socket.emit('chatMessage', {username: "Server", msg: "Hello! <br/> Use this chat to talk with other players. <br/> Use WASD to move around... <br/> Thats pretty much it for now :J" })
+		socket.emit('chatMessage', {username: "Server", msg: "Hello! Use this chat to talk with other players. Use WASD to move around... Thats pretty much it for now :J" })
 		socket.emit('beforePlayers', earlierPlayers);
   });
 
