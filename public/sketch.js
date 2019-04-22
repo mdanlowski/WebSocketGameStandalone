@@ -1,17 +1,32 @@
-/* A way - new player sends his object to the server, then server broadcasts it and his position
-*   later on only guid and new position are sent, and stored in every client's in array of objects
-* B way - data is broadcasted and players are drawn "on the spot"
-*/
+var connectionReady = false;
+
+
+/* GLOBALS / CONFIG */
+var socket = io();
+let randomColor = HTML5COLORS[Math.floor(Math.random()*HTML5COLORS.length)];
+// @ISSUE back to guid generation bc socket.id fails in production
+// let newGuid = Date.now().toString().substr(4) + "-" + Math.random().toString().substr(3,4);
+var plr = new Player(0, 300, 300, 100, 10, randomColor, projectileEmitter);
+
+var COLOR = plr.clr;
+
+var otherPlayers = {};
+
+
+// CONNECT AND SEND ALL INITIAL PLAYER DATA 
+socket.on('connect', () => {
+  plr.guid = socket.id;
+  console.log(socket.connected); // true
+  socket.emit("newPlayerConnected", plr);
+});
+
+
 function setup() {
   let canvas = createCanvas(600, 500);
-  canvas.parent("canvas-container")
-  background("white");
-  while(plr.guid == 0){
-    plr.guid = socket.id;
-    console.log(plr.guid);
-  }
-  socket.emit("newPlayerConnected", plr); // SEND ALL INITIAL PLAYER DATA
+  canvas.parent("canvas-container");
+  
   console.log(COLOR);
+
 }
 
 function draw(){
@@ -32,10 +47,10 @@ function draw(){
     delete otherPlayers[playerIdToUnfollow];
   });
   socket.on('otherPlayerMoved', function(data) {
-        let x_ = data.x;    otherPlayers[data.id].x = x_;
-        let y_ = data.y;    otherPlayers[data.id].y = y_;
+        let x_ = data.x;    otherPlayers[data.guid].x = x_;
+        let y_ = data.y;    otherPlayers[data.guid].y = y_;
   });
-  // ----------- HNDLE SOCKET EVENTS <<<---------
+  // ----------- HANDLE SOCKET EVENTS <<<---------
   // handleSocketEvents();
   
   plr.update(socket);
@@ -50,14 +65,7 @@ function draw(){
 
 }
 
-/* GLOBALS / CONFIG */
-var socket = io();
-let randomColor = HTML5COLORS[Math.floor(Math.random()*HTML5COLORS.length)];
-var plr = new Player(300, 300, 100, 10, randomColor, projectileEmitter);
 
-var COLOR = plr.clr;
-
-var otherPlayers = {};
 
 
 /* SUBROUTINES */

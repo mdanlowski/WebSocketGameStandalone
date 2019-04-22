@@ -8,14 +8,14 @@ body {
 }
 
 #canvas-container {
-	margin: auto;
-  /* border: 1px solid black; */
+	/* margin: auto;
+  /* border: 1px solid black; 
   border-top: 5px solid crimson;
   width: 800px;
-  /* height: 640px; */
+  /* height: 640px; 
   position: fixed;
   left: 10px;
-	
+	 */
 }
 
 .mouse-event:hover {
