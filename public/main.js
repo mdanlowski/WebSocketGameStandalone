@@ -1,7 +1,6 @@
 $(document).ready(function() {
 
     for(elem of document.getElementsByClassName("draggable-widget")) {
-        console.log(elem)
         elem.addEventListener("drag", function(event){
           // console.log(event.target.parentElement)
           var container = event.target.parentElement;

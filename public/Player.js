@@ -1,5 +1,5 @@
-function Player(initX, initY, hp_, ammo_, color_, gun_){
-  this.guid = 0;
+function Player(guid_, initX, initY, hp_, ammo_, color_, gun_){
+  this.guid = guid_;
   this.x = initX;
 	this.y = initY;
 	this.hp = hp_;
@@ -45,7 +45,7 @@ function Player(initX, initY, hp_, ammo_, color_, gun_){
       }
       // prepare and send socket event
       if(beforeMove.ox != this.x || beforeMove.oy != this.y){
-        let data = {id: this.id, x: this.x, y: this.y}
+        let data = {guid: this.guid, x: this.x, y: this.y}
         socket.emit('playerMoveEvent', data);
       }
     }
