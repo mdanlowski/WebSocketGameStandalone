@@ -1,0 +1,3 @@
+<div draggable="true" class="draggable-widget">
+  <span class="mouse-event">[MOVE]</span>
+</div>

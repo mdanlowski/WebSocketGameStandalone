@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>WebSockets Game</title>
+  
+  <link rel="stylesheet" type="text/css" href="public/style.css" />
+  <script
+    src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+    <script type="text/javascript" src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/p5.js"></script>
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.dom.js"></script> -->
+    <!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.6.1/addons/p5.sound.js"></script> -->
+    
+    <script type="text/javascript" src="public/html5Colors.js"></script>
+    <script type="text/javascript" src="public/Player.js"></script>
+    
+    <script type="text/javascript" src="public/sketch.js"></script>
+    
+    <script type="text/javascript" src="public/main.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <aside class="chat">
+    <div draggable="true" class="draggable-widget">
+      <span class="mouse-event">[MOVE]</span> Connected players: <span id="client-count"></span>
+    </div>
+    <hr />
+    <div class="chat-messages">      
+    </div>
+    <fieldset class="new-message-box">   
+      <textarea onkeypress="" id="message-body" rows="3" cols="27"></textarea>
+      <button onclick="sendChatMessage();" id="message-send">Send</button>
+    </fieldset>
+  </aside>
+
+</body>
+</html>
