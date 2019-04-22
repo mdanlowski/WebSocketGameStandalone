@@ -20,7 +20,8 @@ body {
 
 .mouse-event:hover {
   color: dodgerblue;
-  font-weight: bolder;
+	font-weight: bolder;
+	cursor: pointer;
 }
 
 aside.chat {

@@ -8,6 +8,7 @@ function setup() {
   background("white");
   while(plr.guid == 0){
     plr.guid = socket.id;
+    console.log(plr.guid);
   }
   socket.emit("newPlayerConnected", plr); // SEND ALL INITIAL PLAYER DATA
   console.log(COLOR);
@@ -27,12 +28,8 @@ function draw(){
   socket.on('playerConnected', function(playerData) {
     otherPlayers[playerData.guid] = playerData;
   });
-  socket.on('playerDisonnected', function(playerIdToUnfollow) {
-    console.log("disconnected: ", playerIdToUnfollow)
-    console.log(otherPlayers);
+  socket.on('playerDisconnected', function(playerIdToUnfollow) {
     delete otherPlayers[playerIdToUnfollow];
-    console.log(otherPlayers);
-
   });
   socket.on('otherPlayerMoved', function(data) {
         let x_ = data.x;    otherPlayers[data.id].x = x_;
@@ -45,12 +42,10 @@ function draw(){
 
   // DRAW OTHER PLAYERS
   for(let pid of Object.keys(otherPlayers)){
-    // console.log(pid);
-    // console.log(otherPlayers[pid]);
-    if(pid == 0) delete otherPlayers[pid];
     fill(otherPlayers[pid].clr)
     ellipse(otherPlayers[pid].x, otherPlayers[pid].y, 30, 30);
     fill(COLOR);
+    if(pid == 0) delete otherPlayers[pid];
   }
 
 }
