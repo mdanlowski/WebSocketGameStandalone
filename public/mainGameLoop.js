@@ -1,58 +1,78 @@
 var connectionReady = false;
 
+/* ------------------------ GLOBALS / CONFIG ------------------------ */
+const socket = io();
 
-/* GLOBALS / CONFIG */
-var socket = io();
 let randomColor = HTML5COLORS[Math.floor(Math.random()*HTML5COLORS.length)];
-// @ISSUE back to guid generation bc socket.id fails in production
-// let newGuid = Date.now().toString().substr(4) + "-" + Math.random().toString().substr(3,4);
-var plr = new Player(0, 300, 300, 100, 10, randomColor, projectileEmitter);
 
-var COLOR = plr.clr;
+// Balancing settings to be tweaked
+const Balancer = GameBalanceSettings;
 
+// CLIENT-SIDE PLAYER OBJECT
+const plr = new Player(0, 300, 300, 100, 10, randomColor, projectileEmitter);
+var COLOR = plr.clr; // required because of scoping issues with p5
+
+// ALL PROJECTILES ON THE SCREEN
+var bullets = [];
+
+// CLIENT-SIDE PLAYERS CONTAINER
 var otherPlayers = {};
 
 
-// CONNECT AND SEND ALL INITIAL PLAYER DATA 
+// Connect to the server and send initial player data
 socket.on('connect', () => {
   plr.guid = socket.id;
   console.log(socket.connected); // true
   socket.emit("newPlayerConnected", plr);
 });
 
-
+/* ------------------------ GAME CANVAS SETUP ------------------------ */
 function setup() {
-  let canvas = createCanvas(600, 500);
+  var canvas = createCanvas(640, 640);
   canvas.parent("canvas-container");
-  
-  console.log(COLOR);
+  textSize(16);
+  initialFrameCount = frameCount;
 
-}
-
-function draw(){
-  background(0,200,100);
-  
-  // --------->>> HNDLE SOCKET EVENTS -----------
-  // PULL OLD / ADD NEW PLAYERS
-  socket.on('beforePlayers', function(olderPlayersData){
+  socket.on('beforePlayers', function(olderPlayersData){                        // pull players that joined before current client
     // console.log(Object.keys(olderPlayersData));
     for(let pid of Object.keys(olderPlayersData)){
       if (!otherPlayers.hasOwnProperty(pid) && pid != plr.guid) { otherPlayers[pid] = olderPlayersData[pid]; }
     }
+    return;
   });
-  socket.on('playerConnected', function(playerData) {
+  socket.on('playerConnected', function(playerData) {                           // pull each new player
     otherPlayers[playerData.guid] = playerData;
+    return;
   });
-  socket.on('playerDisconnected', function(playerIdToUnfollow) {
+  socket.on('playerDisconnected', function(playerIdToUnfollow) {                // delete DC'd player
     delete otherPlayers[playerIdToUnfollow];
+    return;
   });
-  socket.on('otherPlayerMoved', function(data) {
-        let x_ = data.x;    otherPlayers[data.guid].x = x_;
-        let y_ = data.y;    otherPlayers[data.guid].y = y_;
+  socket.on('otherPlayerMoved', function(data) {                                // handle movements
+      let x_ = data.x;
+      let y_ = data.y;
+      otherPlayers[data.guid].x = x_;
+      otherPlayers[data.guid].y = y_;
+      return;
   });
-  // ----------- HANDLE SOCKET EVENTS <<<---------
-  // handleSocketEvents();
-  
+  socket.on('otherPlayerFired', function(data) {                                // handle shooting from remotes
+    let b = data[0]; let g = data[1];
+    let remoteBullet = new Bullet({x: b.x, y: b.y}, [0,0], g);
+        remoteBullet.heading = b.heading;
+    bullets.push(remoteBullet);
+    return;
+  });
+
+
+  console.log(COLOR);
+}
+
+var initialFrameCount = 0;
+
+/* ------------------------ GAME CANVAS UPDATE ------------------------ */
+function draw(){
+  background(0,200,100);
+    
   plr.update(socket);
 
   // DRAW OTHER PLAYERS
@@ -63,12 +83,36 @@ function draw(){
     if(pid == 0) delete otherPlayers[pid];
   }
 
+  // DRAW PROJECTILES
+  for(let obj of bullets){
+    obj.update(obj, bullets, height, width);
+  }
+
+  // HANDLE SHOOTING LOCAL
+  if(mouseIsPressed && mouseButton === LEFT){
+    if(frameCount - initialFrameCount > Balancer.fireRateBase/plr.gun.fireRateDivisor ){
+      let b = new Bullet({x: plr.x, y: plr.y}, [mouseX, mouseY], plr.gun)
+      bullets.push(b);
+      initialFrameCount = frameCount;
+      // newBulletData = [{x: plr.x, y: plr.y}, [mouseX, mouseY], plr.gun];
+      // socket.emit('playerFireEvent', newBulletData);
+      socket.emit('playerFireEvent', [b, plr.gun]);
+		}
+  }
+  
+  
 }
 
 
 
 
-/* SUBROUTINES */
+/* ------------------------ SUBROUTINES ------------------------ */
+// function mousePressed() {
+//   socket.emit('playerFireStart', ()=>{});
+// }
+
+// *** download other players data 
+// [DEPR]
 function pullAllPlayers(data){
   for(let pid of Object.keys(data)){
     console.log(data.pid)
@@ -89,15 +133,6 @@ function handleSocketEvents(){
 
 }
 
-
-
-var projectileEmitter = {
-  projectileType  : "bullet",
-  projectileSpeed : 8,
-  fireMode  : "auto",
-  fireRate  : 5,
-  damage 	  : 10
-}
 
 
 

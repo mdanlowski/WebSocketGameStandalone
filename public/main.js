@@ -11,6 +11,7 @@ $(document).ready(function() {
     
 });
 
+// --------->>> NON-INGAME SOCKET EVENTS -----------
 socket.on('chatMessage', function(data){
     // console.log('received chat event from server');
     function strip(html){
