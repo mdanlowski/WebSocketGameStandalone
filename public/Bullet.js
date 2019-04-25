@@ -33,7 +33,7 @@ function Bullet(origin_, heading_, weapon_){
 	}
 
 	this.redraw = function(){ 
-		// could it be simplified by passing projType into function???
+		// [TODO] Export drawing charasteristics to an SFC?
 		switch(weapon_.projectileType){
 			case "bullet":
 				noStroke();
@@ -44,11 +44,31 @@ function Bullet(origin_, heading_, weapon_){
 			case "laser":
 				strokeWeight(3);
 				stroke(weapon_.projectileColor);
-					// let laserLineX = this.x + (1/headingMag(this.heading.x, this.heading.y))*150*this.heading.x;
-					let laserLineX = this.x + (1/headingMag(this.heading)) * 150 * this.heading.x;
-					let laserLineY = this.y + (1/headingMag(this.heading)) * 150 * this.heading.y;
-        line(this.x, this.y, laserLineX, laserLineY );
+				// let laserLineX = this.x + (1/headingMag(this.heading.x, this.heading.y))*150*this.heading.x;
+				let laserLineX = this.x + (1/headingMag(this.heading)) * 150 * this.heading.x;
+				let laserLineY = this.y + (1/headingMag(this.heading)) * 150 * this.heading.y;
+				line(this.x, this.y, laserLineX, laserLineY );
 				strokeWeight(1);        
+				break;
+
+			case "plasma":
+				noStroke();
+				fill(weapon_.projectileColor);
+				ellipse(
+					this.x + random(-weapon_.accuracy/2, weapon_.accuracy/2),
+					this.y + random(-weapon_.accuracy/2, weapon_.accuracy/2),
+					random(1,5),
+					random(1,5));
+				break;
+
+			case "ray":
+				strokeWeight(3);
+				stroke(weapon_.projectileColor);
+				line(this.x, this.y, origin_.x, origin_.y);
+				strokeWeight(1);        
+				break;
+
+			default:
 				break;
 
 			// case "grenade":

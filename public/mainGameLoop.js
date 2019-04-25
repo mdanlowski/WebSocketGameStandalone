@@ -3,7 +3,9 @@ var connectionReady = false;
 /* ------------------------ GLOBALS / CONFIG ------------------------ */
 const socket = io();
 
-let randomColor = HTML5COLORS[Math.floor(Math.random()*HTML5COLORS.length)];
+// let BACKGCOLOR = "#ABABAB";
+let BACKGCOLOR = "black";
+const randomColor = HTML5COLORS[Math.floor(Math.random()*HTML5COLORS.length)];
 
 // Balancing settings to be tweaked
 const Balancer = GameBalanceSettings;
@@ -71,7 +73,7 @@ var initialFrameCount = 0;
 
 /* ------------------------ GAME CANVAS UPDATE ------------------------ */
 function draw(){
-  background(0,200,100);
+  background(BACKGCOLOR);
     
   plr.update(socket);
 
@@ -100,7 +102,7 @@ function draw(){
 		}
   }
   
-  
+  drawDebugInfo();
 }
 
 
@@ -110,6 +112,14 @@ function draw(){
 // function mousePressed() {
 //   socket.emit('playerFireStart', ()=>{});
 // }
+
+// *** keyboard key handler, i.e. switching weapons
+function keyPressed() {
+	if (keyCode === 49) plr.gun = projectileEmitter;
+	if (keyCode === 50) plr.gun = laserRifle;
+	if (keyCode === 51)	plr.gun = plasmaGun;
+	if (keyCode === 52)	plr.gun = railGun;
+}
 
 // *** download other players data 
 // [DEPR]
@@ -131,6 +141,11 @@ function handleSocketEvents(){
     otherPlayers[socket.id].y += data.y;
   });
 
+}
+
+function drawDebugInfo(){
+  text(
+    "BUL.LEN: " + bullets.length, 10, 20);
 }
 
 
