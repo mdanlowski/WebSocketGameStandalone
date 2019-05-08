@@ -19,6 +19,7 @@ var bullets = [];
 
 // CLIENT-SIDE PLAYERS CONTAINER
 var otherPlayers = {};
+var deadPlayers = {};
 
 
 // Connect to the server and send initial player data
@@ -26,19 +27,22 @@ socket.on('connect', () => {
   plr.guid = socket.id;
   console.log(socket.connected); // true
   socket.emit("newPlayerConnected", plr);
-});
 
-/* ------------------------ GAME CANVAS SETUP ------------------------ */
+  // for errors @BUG
+});
+  
+  /* ------------------------ GAME SETUP ------------------------ */
 function setup() {
   var canvas = createCanvas(640, 640);
   canvas.parent("canvas-container");
   textSize(16);
   initialFrameCount = frameCount;
 
-  socket.on('beforePlayers', function(olderPlayersData){                        // pull players that joined before current client
+  socket.on('newPlayerGetsConnectedPlayers', function(olderPlayersData){        // pull players that joined before current client
     // console.log(Object.keys(olderPlayersData));
-    for(let pid of Object.keys(olderPlayersData)){
-      if (!otherPlayers.hasOwnProperty(pid) && pid != plr.guid) { otherPlayers[pid] = olderPlayersData[pid]; }
+    // @BUG : connect 1 tab, then 2, 2 doesnt see 1 until 1 reloads
+    for(let playerId of Object.keys(olderPlayersData)){
+      if (!otherPlayers.hasOwnProperty(playerId) && playerId != plr.guid) { otherPlayers[playerId] = olderPlayersData[playerId]; }
     }
     return;
   });
@@ -46,65 +50,109 @@ function setup() {
     otherPlayers[playerData.guid] = playerData;
     return;
   });
-  socket.on('playerDisconnected', function(playerIdToUnfollow) {                // delete DC'd player
-    delete otherPlayers[playerIdToUnfollow];
+  socket.on('playerDisconnected', function(playerIdToDiscard) {                 // delete DC'd player
+    delete otherPlayers[playerIdToDiscard];
     return;
   });
-  socket.on('otherPlayerMoved', function(data) {                                // handle movements
-      let x_ = data.x;
-      let y_ = data.y;
-      otherPlayers[data.guid].x = x_;
-      otherPlayers[data.guid].y = y_;
+  socket.on('otherPlayerMoved', function(moveData) {                            // handle movements
+      let target = otherPlayers[moveData.guid];
+      let x_ = moveData.x;
+      let y_ = moveData.y;
+      target.x = x_;
+      target.y = y_;
       return;
   });
-  socket.on('otherPlayerFired', function(data) {                                // handle shooting from remotes
-    let b = data[0]; let g = data[1];
-    let remoteBullet = new Bullet({x: b.x, y: b.y}, [0,0], g);
-        remoteBullet.heading = b.heading;
+  socket.on('otherPlayerFired', function(data) {                                // handle shooting from others
+    let bul = data[0]; let gun = data[1];
+    let remoteBullet = new Bullet({x: bul.x, y: bul.y}, [0,0], gun);
+        remoteBullet.heading = bul.heading;
+        remoteBullet.init();
     bullets.push(remoteBullet);
     return;
   });
 
+  socket.on('otherPlayerGotHit', hitData => {
+    otherPlayers[hitData.guid].hp -= hitData.damage;
+  });
+
+  socket.on('otherPlayerDied', deathData => {
+
+  });
 
   console.log(COLOR);
 }
 
 var initialFrameCount = 0;
 
-/* ------------------------ GAME CANVAS UPDATE ------------------------ */
+/* ------------------------ GAME UPDATE ------------------------ */
 function draw(){
   background(BACKGCOLOR);
     
   plr.update(socket);
 
   // DRAW OTHER PLAYERS
-  for(let pid of Object.keys(otherPlayers)){
-    fill(otherPlayers[pid].clr)
-    ellipse(otherPlayers[pid].x, otherPlayers[pid].y, 30, 30);
+  for(let playerId of Object.keys(otherPlayers)){
+    let target = otherPlayers[playerId];
+    fill(target.clr)
+    ellipse(target.x, target.y, 30, 30);
+    drawRemoteStats(target);
     fill(COLOR);
-    if(pid == 0) delete otherPlayers[pid];
+    if(playerId == 0) delete otherPlayers[playerId];    // ensure no empty or faulty plrs
   }
 
   // DRAW PROJECTILES
-  for(let obj of bullets){
-    obj.update(obj, bullets, height, width);
+  for(let bullet of bullets){
+    bullet.update(bullet, bullets, height, width);
   }
+  
+  // PROCESS COLLISIONS
+  // @TODO change collision detection to a quad tree or sth
+  // let collisionCounter = 0;
+  for(let bullet of bullets){
+    // collisionCounter++;
+    let shouldEmitHitInfo = plr.collisions(bullet);
+    if(shouldEmitHitInfo){
+      hitData = {
+        guid: plr.guid,
+        damage: bullet.dmg
+      }
+      socket.emit('playerGetsHitEvent', hitData);
+    }
+    // O(n^2) - fix! TODO
+    for(let playerId of Object.keys(otherPlayers)){
+      let px = otherPlayers[playerId].x; 
+      let py = otherPlayers[playerId].y; 
+      let dimensions = otherPlayers[playerId].dimensions;
+      if((bullet.x >= px-dimensions/2 && bullet.x <= px+dimensions/2) && (bullet.y >= py-dimensions/2 && bullet.y <= py+dimensions/2 )){
+        bullets.splice(bullets.indexOf(bullet), 1);
+        delete bullets[bullet];
+      }
+    }
+	}
 
   // HANDLE SHOOTING LOCAL
   if(mouseIsPressed && mouseButton === LEFT){
     if(frameCount - initialFrameCount > Balancer.fireRateBase/plr.gun.fireRateDivisor ){
-      let b = new Bullet({x: plr.x, y: plr.y}, [mouseX, mouseY], plr.gun)
-      bullets.push(b);
+      let bul = new Bullet({x: plr.x, y: plr.y}, [mouseX, mouseY], plr.gun);
+      bul.init();
+      bullets.push(bul);
       initialFrameCount = frameCount;
       // newBulletData = [{x: plr.x, y: plr.y}, [mouseX, mouseY], plr.gun];
       // socket.emit('playerFireEvent', newBulletData);
-      socket.emit('playerFireEvent', [b, plr.gun]);
+      socket.emit('playerFireEvent', [bul, plr.gun]);
 		}
   }
   
   drawDebugInfo();
 }
 
+
+var drawRemoteStats = function(obj){
+  fill('orange');
+  noStroke();
+  rect(obj.x - 25, obj.y + 20, 0.5 * obj.hp, 4);
+  stroke(1);
+}
 
 
 
@@ -124,7 +172,7 @@ function keyPressed() {
 // *** download other players data 
 // [DEPR]
 function pullAllPlayers(data){
-  for(let pid of Object.keys(data)){
+  for(let playerId of Object.keys(data)){
     console.log(data.pid)
   }
 }
@@ -148,7 +196,9 @@ function drawDebugInfo(){
     "BUL.LEN: " + bullets.length, 10, 20);
 }
 
-
+function CollisionObserver(arrOfPlayers, arrOfBullets){
+  
+}
 
 
 
