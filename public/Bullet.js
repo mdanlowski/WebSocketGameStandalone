@@ -4,12 +4,17 @@ function Bullet(origin_, heading_, weapon_){
 	this.x = origin_.x;
 	this.y = origin_.y;
 	this.heading = {
-		// Some scaling maths deriver by trial and error
+		// Some scaling maths derived by trial and error
 		x : 0.01*(heading_[0] - this.x),
 		y : 0.01*(heading_[1] - this.y)
 	}
 	this.vel = weapon_.projectileSpeed;
 	this.dmg = weapon_.damage;
+
+	this.init = function(){
+		this.x += this.heading.x * (1/headingMag(this.heading)) * 20;
+		this.y += this.heading.y * (1/headingMag(this.heading)) * 20;
+	}
 
 	this.update = function(instance, collection, viewHeit, viewWith){
 		// Calculate positions and redraw each object
@@ -25,9 +30,9 @@ function Bullet(origin_, heading_, weapon_){
 
 	}
 
-	this.edges = function( _self_, projctlArr, worldH, worldW ){
+	this.edges = function(self, projctlArr, worldH, worldW){
 		if (this.x < 0 || this.x > worldW || this.y < 0 || this.y > worldH){
-			let removeIndex = projctlArr.indexOf(_self_);
+			let removeIndex = projctlArr.indexOf(self);
 			projctlArr.splice(removeIndex, 1);
 		}
 	}
