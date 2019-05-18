@@ -27,7 +27,7 @@ app.get('/', function(req, res) {
 app.use('/public', express.static(path.join(__dirname, '/public/')));
 
 // srv.listen(process.env.PORT);
-srv.listen(process.env.PORT || 3000);
+srv.listen(process.env.PORT || 4000);
 console.log(`--> server initialized on port ${srv.address().port}`);
 
 // Sockets
